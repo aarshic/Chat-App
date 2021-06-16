@@ -10,13 +10,14 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.Set;
@@ -38,11 +39,36 @@ public class BluetoothPairingDeviceList extends AppCompatActivity {
 
         listPairedDevices = findViewById(R.id.list_paired_devices);
         listAvailableDevices = findViewById(R.id.list_available_devices);
-        pairedDevicesAdapter = new ArrayAdapter<String>(BluetoothPairingDeviceList.this, R.layout.activity_bluetooth_device_item);
-        availableDevicesAdapter = new ArrayAdapter<String>(BluetoothPairingDeviceList.this, R.layout.activity_bluetooth_device_item);
+        pairedDevicesAdapter = new ArrayAdapter<String>(BluetoothPairingDeviceList.this, R.layout.bluetooth_device_item);
+        availableDevicesAdapter = new ArrayAdapter<String>(BluetoothPairingDeviceList.this, R.layout.bluetooth_device_item);
 
         listPairedDevices.setAdapter(pairedDevicesAdapter);
+        listPairedDevices.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                String info = ((TextView) view).getText().toString();
+                String infoAddress = info.substring(info.length() - 17);
+
+                Intent intent = new Intent();
+                intent.putExtra("address", infoAddress);
+                setResult(RESULT_OK, intent);
+                finish();
+            }
+        });
+
         listAvailableDevices.setAdapter(availableDevicesAdapter);
+        listAvailableDevices.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                String info = ((TextView) view).getText().toString();
+                String infoAddress = info.substring(info.length() - 17);
+
+                Intent intent = new Intent();
+                intent.putExtra("address", infoAddress);
+                setResult(RESULT_OK, intent);
+                finish();
+            }
+        });
 
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         Set<BluetoothDevice> pairedDevices = bluetoothAdapter.getBondedDevices();
@@ -79,25 +105,18 @@ public class BluetoothPairingDeviceList extends AppCompatActivity {
     private BroadcastReceiver bluetoothBroadCastReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            Log.d("Aarshi", "In onReceive()");
-
             String bluetoothAction = intent.getAction();
 
             if (BluetoothDevice.ACTION_FOUND.equals(bluetoothAction)) {
-                Log.d("Aarshi", "In BluetoothDevice.ACTION_FOUND");
                 BluetoothDevice bluetoothDevice = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
                 if (bluetoothDevice.getBondState() != BluetoothDevice.BOND_BONDED) {
-                    Log.d("Aarshi", "In BluetoothDevice not bonded");
                     availableDevicesAdapter.add(bluetoothDevice.getName() + "\n" + bluetoothDevice.getAddress());
                 }
             } else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(bluetoothAction)) {
                 scanDeviceProgressBar.setVisibility(View.GONE);
-                Log.d("Aarshi", "In BluetoothAdapter.ACTION_DISCOVERY_FINISHED");
                 if (availableDevicesAdapter.getCount() == 0) {
-                    Log.d("Aarshi", "No Device Found");
                     Toast.makeText(BluetoothPairingDeviceList.this, "No Device Found", Toast.LENGTH_SHORT).show();
                 } else {
-                    Log.d("Aarshi", "Devices Found");
                     Toast.makeText(BluetoothPairingDeviceList.this, "Select Device", Toast.LENGTH_SHORT).show();
                 }
             }
@@ -105,10 +124,10 @@ public class BluetoothPairingDeviceList extends AppCompatActivity {
     };
 
     private void scanAvailableDevices() {
+        Toast.makeText(BluetoothPairingDeviceList.this, "Scanning Available Devices", Toast.LENGTH_SHORT).show();
+
         scanDeviceProgressBar.setVisibility(View.VISIBLE);
         availableDevicesAdapter.clear();
-
-        Toast.makeText(BluetoothPairingDeviceList.this, "Scanning Available Devices", Toast.LENGTH_SHORT).show();
 
         if (bluetoothAdapter.isDiscovering()) {
             bluetoothAdapter.cancelDiscovery();
