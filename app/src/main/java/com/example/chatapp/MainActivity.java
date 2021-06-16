@@ -26,7 +26,18 @@ import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity {
 
+    private Utils utils;
+
+    private ListView listConversation;
+    private EditText message;
+    private Button send;
+    private ArrayAdapter<String> chatAdapter;
+
+    private String deviceConnected;
+    public static final String DEVICE_NAME = "deviceName";
+    public static final String TOAST = "toast";
     private BluetoothAdapter bluetoothAdapter;
+
     private final int LOCATION_REQ = 101;
     private final int DEVICE_SELECTED = 202;
 
@@ -36,17 +47,6 @@ public class MainActivity extends AppCompatActivity {
     public static final int TOAST_MESSAGE = 4;
     public static final int MESSAGE_STATE_CHANGED = 5;
 
-    public static final String DEVICE_NAME = "deviceName";
-    private String deviceConnected;
-    public static final String TOAST = "toast";
-
-    private Utils utils;
-
-    private ListView listConversation;
-    private EditText message;
-    private Button send;
-    private ArrayAdapter<String> chatAdapter;
-
     private Handler handler = new Handler(new Handler.Callback() {
         @Override
         public boolean handleMessage(@NonNull Message msg) {
@@ -54,12 +54,12 @@ public class MainActivity extends AppCompatActivity {
                 case READ_MESSAGE:
                     byte[] readBuffer = (byte[]) msg.obj;
                     String iBuffer = new String(readBuffer, 0, msg.arg1);
-                    chatAdapter.add(deviceConnected + ": " + iBuffer);
+                    chatAdapter.add(deviceConnected + "| " + iBuffer);
                     break;
                 case WRITE_MESSAGE:
                     byte[] writebuffer = (byte[]) msg.obj;
                     String oBuffer = new String(writebuffer);
-                    chatAdapter.add("Me: " + oBuffer);
+                    chatAdapter.add("Me| " + oBuffer);
                     break;
                 case DEVICE_NAME_MESSAGE:
                     deviceConnected = msg.getData().getString(DEVICE_NAME);
@@ -69,9 +69,7 @@ public class MainActivity extends AppCompatActivity {
                     Toast.makeText(MainActivity.this, msg.getData().getString(TOAST), Toast.LENGTH_SHORT).show();
                     break;
                 case MESSAGE_STATE_CHANGED:
-                    if (msg.arg1 == Utils.STATE_NONE)
-                        setState("Not Connected");
-                    else if (msg.arg1 == Utils.STATE_LISTEN)
+                    if (msg.arg1 == Utils.STATE_NONE || msg.arg1 == Utils.STATE_LISTEN)
                         setState("Not Connected");
                     else if (msg.arg1 == Utils.STATE_CONNECTING)
                         setState("Connecting");
@@ -117,7 +115,7 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(MainActivity.this, "bluetooth not found", Toast.LENGTH_SHORT).show();
         }
 
-        utils = new Utils(MainActivity.this, handler);
+        utils = new Utils(handler);
     }
 
     @Override
@@ -202,7 +200,6 @@ public class MainActivity extends AppCompatActivity {
             bluetoothAdapter.enable();
             Toast.makeText(MainActivity.this, "bluetooth enabled", Toast.LENGTH_SHORT).show();
         }
-
         if (bluetoothAdapter.getScanMode() != BluetoothAdapter.SCAN_MODE_CONNECTABLE_DISCOVERABLE) {
             Intent scanIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
             scanIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 300);
